@@ -21,19 +21,20 @@ html, body {
 }
 .view {
   position: absolute;
-  inset: 0 0 var(--ad-reserve) 0;
+  top: 0; right: 0; bottom: var(--ad-reserve); left: 0;
   display: flex; flex-direction: column;
   background: #000;
 }
 .view[hidden] { display: none; }
 header {
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center;
   padding: 10px 10px;
   padding-top: calc(10px + env(safe-area-inset-top));
   background: #1c1c1e; border-bottom: 1px solid #2c2c2e;
   min-height: 52px;
   z-index: 5;
 }
+header > * + * { margin-left: 4px; }
 header h1 {
   font-size: 17px; font-weight: 600; margin: 0; flex: 1; text-align: center;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -82,7 +83,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 
 #home-selection-bar {
   position: absolute; left: 0; right: 0; bottom: 0;
-  display: flex; gap: 8px; padding: 8px 12px;
+  display: flex; padding: 8px 12px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
   background: rgba(28,28,30,0.95);
   backdrop-filter: blur(20px);
@@ -94,16 +95,18 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   flex: 1; padding: 10px; background: #2c2c2e; color: #fff;
   border: none; border-radius: 10px; font-size: 13px; cursor: pointer;
 }
+#home-selection-bar button + button { margin-left: 8px; }
 #home-selection-bar button:disabled { opacity: 0.35; }
 #home-selection-bar button.danger { color: #ff3b30; }
 
 .folder-row {
-  display: flex; gap: 12px; align-items: center;
+  display: flex; align-items: center;
   padding: 12px 14px;
   border-bottom: 1px solid #1c1c1e;
   cursor: pointer;
   -webkit-touch-callout: none;
 }
+.folder-row > * + * { margin-left: 12px; }
 .folder-row:active { background: #1c1c1e; }
 .folder-row.selected { background: rgba(10,132,255,0.15); }
 .folder-row .checkbox {
@@ -171,16 +174,26 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   content: '✓';
   font-weight: 600;
 }
+/* aspect-ratio: 4/3 → padding-bottom hack（兼容 Chrome 75） */
 .folder-card .folder-cover {
-  aspect-ratio: 4 / 3;
+  position: relative;
+  height: 0;
+  padding-bottom: 75%;
   background: #2c2c2e;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 44px;
   overflow: hidden;
   flex-shrink: 0;
 }
 .folder-card .folder-cover img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.folder-card .folder-cover > span {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px;
 }
 .folder-card-name {
   padding: 10px 12px 2px;
@@ -194,10 +207,11 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 
 .project-row {
-  display: flex; gap: 12px; align-items: center;
+  display: flex; align-items: center;
   padding: 10px 14px; border-bottom: 1px solid #1c1c1e; cursor: pointer;
   -webkit-touch-callout: none;
 }
+.project-row > * + * { margin-left: 12px; }
 .project-row:active { background: #1c1c1e; }
 .project-row .thumb {
   width: 60px; height: 60px; flex: 0 0 60px;
@@ -221,15 +235,24 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 .project-card:active { opacity: 0.75; }
 .project-card .project-cover {
-  aspect-ratio: 4 / 3;
+  position: relative;
+  height: 0;
+  padding-bottom: 75%;
   background: #2c2c2e;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 40px;
   overflow: hidden;
   flex-shrink: 0;
 }
 .project-card .project-cover img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.project-card .project-cover > span {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
 }
 .project-card-name {
   padding: 10px 12px 2px;
@@ -253,12 +276,18 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 .add-card:active { background: rgba(255,255,255,0.04); }
 .add-card .add-cover {
-  aspect-ratio: 4 / 3;
-  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  height: 0;
+  padding-bottom: 75%;
   color: #8e8e93;
+  flex-shrink: 0;
+}
+.add-card .add-cover > * {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
   font-size: 40px;
   font-weight: 200;
-  flex-shrink: 0;
 }
 .add-card .add-label {
   padding: 8px 12px 12px;
@@ -268,12 +297,13 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 
 .add-row {
-  display: flex; gap: 12px; align-items: center;
+  display: flex; align-items: center;
   padding: 12px 14px;
   border-bottom: 1px solid #1c1c1e;
   cursor: pointer;
   -webkit-touch-callout: none;
 }
+.add-row > * + * { margin-left: 12px; }
 .add-row:active { background: #1c1c1e; }
 .add-row .add-thumb {
   width: 60px; height: 60px; flex: 0 0 60px;
@@ -295,8 +325,14 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 .image-cell.add-image-cell .thumb-wrap {
   background: transparent;
   border: 2px dashed #3a3a3c;
-  display: flex; align-items: center; justify-content: center;
   color: #8e8e93;
+  font-size: 30px;
+  font-weight: 200;
+}
+.image-cell.add-image-cell .thumb-wrap > span {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
   font-size: 30px;
   font-weight: 200;
 }
@@ -324,20 +360,26 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   align-content: start;
 }
 .image-cell {
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column;
   cursor: pointer;
   -webkit-touch-callout: none;
 }
+.image-cell > * + * { margin-top: 4px; }
 .image-cell:active { opacity: 0.75; }
+/* aspect-ratio: 1 → padding-bottom hack */
 .image-cell .thumb-wrap {
-  aspect-ratio: 1;
+  position: relative;
+  height: 0;
+  padding-bottom: 100%;
   background: #2c2c2e;
   border-radius: 8px;
   overflow: hidden;
-  position: relative;
 }
 .image-cell .thumb-wrap img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
 }
 .image-cell .badge {
   position: absolute;
@@ -348,6 +390,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   font-size: 11px;
   color: #fff;
   font-weight: 600;
+  z-index: 2;
 }
 .image-cell .order {
   position: absolute;
@@ -359,6 +402,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   font-size: 11px;
   color: #fff;
   font-weight: 600;
+  z-index: 2;
 }
 .image-cell .img-name {
   font-size: 10px;
@@ -394,10 +438,10 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   bottom: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   z-index: 40;
   pointer-events: auto;
 }
+#editor-fab button + button { margin-top: 10px; }
 #editor-fab button {
   width: 52px; height: 52px;
   border-radius: 50%;
@@ -430,11 +474,12 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 #watermark-layer {
   position: absolute;
   top: 14px; left: 14px;
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center;
   pointer-events: none;
   z-index: 45;
   transition: opacity 0.2s;
 }
+#watermark-layer > * + * { margin-left: 8px; }
 #watermark-layer[hidden] { display: none; }
 #watermark-close {
   pointer-events: auto;
@@ -461,12 +506,13 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 
 .editor-footer {
-  display: flex; gap: 6px; padding: 8px 10px;
+  display: flex; padding: 8px 10px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom));
   background: #1c1c1e; border-top: 1px solid #2c2c2e;
   align-items: center;
   z-index: 5;
 }
+.editor-footer > * + * { margin-left: 6px; }
 .editor-footer button {
   background: #2c2c2e; border: none; color: #fff;
   padding: 12px 10px; border-radius: 10px;
@@ -488,7 +534,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 
 .modal {
   position: fixed;
-  inset: 0 0 var(--ad-reserve) 0;
+  top: 0; right: 0; bottom: var(--ad-reserve); left: 0;
   background: rgba(0,0,0,0.55);
   z-index: 100; display: flex; align-items: flex-end;
 }
@@ -511,14 +557,16 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 #modal-value .sheet { max-height: 33vh; }
 #modal-style .sheet { max-height: 50vh; }
 
-.unit-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+.unit-bar { display: flex; margin-bottom: 14px; }
 .unit-bar[hidden] { display: none; }
+.unit-bar > * + * { margin-left: 6px; }
 .unit-btn {
   flex: 1; padding: 9px; background: #2c2c2e; border: none; color: #fff;
   border-radius: 8px; font-size: 14px; cursor: pointer;
 }
 .unit-btn.active { background: #0a84ff; font-weight: 600; }
-.sheet .row { display: flex; gap: 8px; }
+.sheet .row { display: flex; }
+.sheet .row > * + * { margin-left: 8px; }
 .sheet .row button {
   flex: 1; padding: 14px; border: none; border-radius: 10px;
   font-size: 16px; cursor: pointer; background: #2c2c2e; color: #fff;
@@ -544,13 +592,15 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   gap: 8px;
 }
 .color-dot {
-  aspect-ratio: 1; border-radius: 50%;
+  padding-bottom: 100%;
+  position: relative;
+  border-radius: 50%;
   border: 2px solid transparent;
-  cursor: pointer; position: relative;
+  cursor: pointer;
 }
 .color-dot.active { border-color: #fff; }
 .color-dot.active::after {
-  content: '✓'; position: absolute; inset: 0;
+  content: '✓'; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 13px; font-weight: bold;
   text-shadow: 0 1px 3px rgba(0,0,0,0.6);
@@ -560,16 +610,20 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   gap: 6px;
 }
 .endpoint-btn {
-  aspect-ratio: 1;
+  position: relative;
+  height: 0;
+  padding-bottom: 100%;
   background: #2c2c2e;
   border: 2px solid transparent;
   border-radius: 8px;
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0;
 }
 .endpoint-btn.active { border-color: #0a84ff; background: #1a3a5a; }
-.endpoint-btn svg { width: 70%; height: 70%; }
+.endpoint-btn svg {
+  position: absolute;
+  top: 15%; left: 15%;
+  width: 70%; height: 70%;
+}
 
 .label-pos-grid {
   display: grid;
@@ -590,8 +644,9 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 .label-pos-btn:active { background: #3a3a3c; }
 
 .slider-row {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center;
 }
+.slider-row > * + * { margin-left: 12px; }
 .slider-row input[type="range"] { flex: 1; accent-color: #0a84ff; }
 .slider-row .weight-val {
   min-width: 50px; text-align: right; font-size: 14px; color: #8e8e93;
@@ -669,10 +724,10 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 #toast.show { opacity: 1; }
 .spinner {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.6);
   display: flex; align-items: center; justify-content: center;
   z-index: 998; color: #fff; font-size: 14px;
-  flex-direction: column; gap: 12px;
+  flex-direction: column;
 }
 .spinner[hidden] { display: none; }
 .spinner .ring {
@@ -680,6 +735,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   border: 3px solid rgba(255,255,255,0.15);
   border-top-color: #0a84ff; border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -813,8 +869,8 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
     <div class="style-section">
       <div class="style-label">
         <span>文字颜色</span>
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#8e8e93;">
-          <input type="checkbox" id="text-same-color" style="accent-color:#0a84ff;">
+        <label style="display:flex;align-items:center;font-size:13px;color:#8e8e93;">
+          <input type="checkbox" id="text-same-color" style="accent-color:#0a84ff;margin-right:6px;">
           跟随主色
         </label>
       </div>
@@ -1047,7 +1103,7 @@ function sortProjects(list) {
 const FOLDER_CREATED_KEY = 'sn_folder_created';
 function getFolderCreatedMap() {
   try { return JSON.parse(localStorage.getItem(FOLDER_CREATED_KEY) || '{}'); }
-  catch { return {}; }
+  catch (e) { return {}; }
 }
 function saveFolderCreatedMap(m) {
   localStorage.setItem(FOLDER_CREATED_KEY, JSON.stringify(m));
@@ -1127,7 +1183,8 @@ function pickFiles(callback) {
   fileInput.click();
 }
 
-function defaultImageName(existing = []) {
+function defaultImageName(existing) {
+  existing = existing || [];
   const d = new Date();
   const p = n => String(n).padStart(2, '0');
   const base = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
@@ -1142,7 +1199,7 @@ function defaultImageName(existing = []) {
 const FOLDERS_KEY = 'sn_extra_folders';
 function getExtraFolders() {
   try { return JSON.parse(localStorage.getItem(FOLDERS_KEY) || '[]'); }
-  catch { return []; }
+  catch (e) { return []; }
 }
 function saveExtraFolders(list) { localStorage.setItem(FOLDERS_KEY, JSON.stringify(list)); }
 function addExtraFolder(name) {
@@ -1225,7 +1282,7 @@ function syncStyleDefault(style) {
   saveStyleDefault();
 }
 
-const DB = (() => {
+const DB = (function() {
   let db;
   function open() {
     return new Promise((res, rej) => {
@@ -1264,15 +1321,17 @@ const DB = (() => {
 
 function migrateProject(p) {
   if (p.images && Array.isArray(p.images)) {
-    p.images = p.images.map(im => ({
-      ...im,
-      id: im.id || uid(),
-      name: im.name || defaultImageName(),
-      annotations: (im.annotations || []).map(a => ({
-        ...a,
-        type: a.type || 'line',
-      })),
-    }));
+    p.images = p.images.map(im => {
+      const merged = Object.assign({}, im);
+      merged.id = merged.id || uid();
+      merged.name = merged.name || defaultImageName();
+      merged.annotations = (merged.annotations || []).map(a => {
+        const aa = Object.assign({}, a);
+        aa.type = aa.type || 'line';
+        return aa;
+      });
+      return merged;
+    });
     return p;
   }
   if (p.imageBlob) {
@@ -1289,23 +1348,25 @@ function migrateProject(p) {
         thumbUrl: p.thumbUrl || '',
         width: p.imageWidth || 0,
         height: p.imageHeight || 0,
-        annotations: (p.annotations || []).map(a => ({ ...a, type: a.type || 'line' })),
+        annotations: (p.annotations || []).map(a => Object.assign({}, a, { type: a.type || 'line' })),
       }],
     };
   }
-  return { ...p, images: p.images || [] };
+  const out = Object.assign({}, p);
+  out.images = p.images || [];
+  return out;
 }
 
 function projectImageCount(p) { return (p.images || []).length; }
 function projectAnnotationCount(p) {
-  return (p.images || []).reduce((n, im) => n + (im.annotations?.length || 0), 0);
+  return (p.images || []).reduce((n, im) => n + ((im.annotations && im.annotations.length) || 0), 0);
 }
 function projectFirstThumb(p) {
   const first = (p.images || [])[0];
-  return first?.thumbUrl || '';
+  return (first && first.thumbUrl) || '';
 }
 
-const CRC_TABLE = (() => {
+const CRC_TABLE = (function() {
   const t = new Uint32Array(256);
   for (let i = 0; i < 256; i++) {
     let c = i;
@@ -1586,7 +1647,7 @@ function renderHome() {
     }).join('');
     if (showAddBtn) {
       html += `<div class="add-card" id="home-add-card">
-        <div class="add-cover">＋</div>
+        <div class="add-cover"><div>＋</div></div>
         <div class="add-label">新建项目</div>
       </div>`;
     }
@@ -1907,7 +1968,7 @@ function renderFolderPage() {
       </div>`;
     }).join('');
     html += `<div class="add-card" id="folder-add-card">
-      <div class="add-cover">＋</div>
+      <div class="add-cover"><div>＋</div></div>
       <div class="add-label">新建房间</div>
     </div>`;
     content.innerHTML = html;
@@ -2067,12 +2128,12 @@ async function makeThumb(blob) {
     const S = 240;
     const c = document.createElement('canvas');
     c.width = S; c.height = S;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#2c2c2e'; ctx.fillRect(0, 0, S, S);
+    const ctx2 = c.getContext('2d');
+    ctx2.fillStyle = '#2c2c2e'; ctx2.fillRect(0, 0, S, S);
     const r = img.naturalWidth / img.naturalHeight;
     let w = S, h = S;
     if (r > 1) h = S / r; else w = S * r;
-    ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+    ctx2.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
     return c.toDataURL('image/jpeg', 0.7);
   } finally { URL.revokeObjectURL(url); }
 }
@@ -2111,7 +2172,7 @@ function renderProjectPage() {
 
   const grid = $('#image-grid');
   let html = p.images.map((im, i) => {
-    const annCount = im.annotations?.length || 0;
+    const annCount = (im.annotations && im.annotations.length) || 0;
     const badge = annCount ? `<div class="badge">${annCount}</div>` : '';
     const order = `<div class="order">${i + 1}</div>`;
     const name = escapeHtml(im.name || `图${i + 1}`);
@@ -2125,7 +2186,7 @@ function renderProjectPage() {
   }).join('');
 
   html += `<div class="image-cell add-image-cell" id="project-add-image-cell">
-    <div class="thumb-wrap">＋</div>
+    <div class="thumb-wrap"><span>＋</span></div>
     <div class="img-name">新建图片</div>
   </div>`;
 
@@ -2341,34 +2402,34 @@ $('#watermark-close').onclick = (e) => {
   toast('已移除水印（可在设置中重新开启）');
 };
 
-function drawWatermarkOnScreen(ctx, W, H) {
+function drawWatermarkOnScreen(ctx2, W, H) {
   if (!editorPrefs.watermark) return;
   const fs = 14;
-  ctx.save();
-  ctx.font = `600 ${fs}px -apple-system, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.shadowColor = 'rgba(0,0,0,0.7)';
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetY = 1;
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  ctx.fillText('PicDim', 44, 18);
-  ctx.restore();
+  ctx2.save();
+  ctx2.font = `600 ${fs}px -apple-system, sans-serif`;
+  ctx2.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx2.shadowColor = 'rgba(0,0,0,0.7)';
+  ctx2.shadowBlur = 4;
+  ctx2.shadowOffsetY = 1;
+  ctx2.textBaseline = 'top';
+  ctx2.textAlign = 'left';
+  ctx2.fillText('PicDim', 44, 18);
+  ctx2.restore();
 }
 
-function drawWatermarkForExport(ctx, W, H) {
+function drawWatermarkForExport(ctx2, W, H) {
   if (!editorPrefs.watermark) return;
   const fs = Math.max(16, W * 0.032);
-  ctx.save();
-  ctx.font = `600 ${fs}px -apple-system, sans-serif`;
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  ctx.shadowColor = 'rgba(0,0,0,0.7)';
-  ctx.shadowBlur = fs * 0.5;
-  ctx.shadowOffsetY = fs * 0.08;
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  ctx.fillText('PicDim', fs * 0.8, fs * 0.8);
-  ctx.restore();
+  ctx2.save();
+  ctx2.font = `600 ${fs}px -apple-system, sans-serif`;
+  ctx2.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx2.shadowColor = 'rgba(0,0,0,0.7)';
+  ctx2.shadowBlur = fs * 0.5;
+  ctx2.shadowOffsetY = fs * 0.08;
+  ctx2.textBaseline = 'top';
+  ctx2.textAlign = 'left';
+  ctx2.fillText('PicDim', fs * 0.8, fs * 0.8);
+  ctx2.restore();
 }
 
 const canvas = $('#editor-canvas');
@@ -2378,8 +2439,8 @@ const magEl = $('#magnifier');
 function computeImageRect() {
   const wrap = $('#canvas-wrap');
   const W = wrap.clientWidth, H = wrap.clientHeight;
-  const iw = state.image?.naturalWidth || 1;
-  const ih = state.image?.naturalHeight || 1;
+  const iw = (state.image && state.image.naturalWidth) || 1;
+  const ih = (state.image && state.image.naturalHeight) || 1;
   const fit = Math.min(W / iw, H / ih) * state.zoom;
   const w = iw * fit;
   const h = ih * fit;
@@ -2419,7 +2480,7 @@ async function openImage(imageId) {
   const im = state.current.images.find(x => x.id === imageId);
   if (!im) return;
   state.currentImage = im;
-  state.annotations = (im.annotations || []).map(a => ({ ...a, type: a.type || 'line' }));
+  state.annotations = (im.annotations || []).map(a => Object.assign({}, a, { type: a.type || 'line' }));
   state.history = [];
   state.pendingStart = null; state.dragCurrent = null;
   state.snapLines = { x: null, y: null };
@@ -2547,7 +2608,6 @@ $('#btn-add-ruler').onclick = () => {
   editValueOf(a.id);
 };
 
-/* 创建空白文字框：位于视口中心 */
 $('#btn-add-text').onclick = () => {
   if (!state.image) return;
 
@@ -2785,7 +2845,6 @@ function drawCrosshair(c, x, y, r, color) {
   c.restore();
 }
 
-/* 文字框绘制（屏幕坐标与导出通用） */
 function drawTextOn(c, a, rect) {
   const cx = rect.x + a.x1 * rect.w;
   const cy = rect.y + a.y1 * rect.h;
@@ -3008,7 +3067,7 @@ function cancelActiveSingleTouch() {
   if (touch.originalCopy && touch.target) {
     const idx = state.annotations.findIndex(a => a.id === touch.target);
     if (idx >= 0) {
-      state.annotations[idx] = { ...touch.originalCopy };
+      state.annotations[idx] = Object.assign({}, touch.originalCopy);
       if (state.history.length) state.history.pop();
     }
   }
@@ -3095,7 +3154,7 @@ function onPointerDown(e) {
       touch.longPressFired = true;
       if (touch.originalCopy) {
         const idx = state.annotations.findIndex(a => a.id === touch.target);
-        if (idx >= 0) state.annotations[idx] = { ...touch.originalCopy };
+        if (idx >= 0) state.annotations[idx] = Object.assign({}, touch.originalCopy);
         state.history.pop(); renderCanvas();
       }
       showAnnotationMenu(touch.target);
@@ -3135,8 +3194,8 @@ function onPointerMove(e) {
     const factor = pinchState.startDist > 0 ? dist / pinchState.startDist : 1;
     const newZoom = clamp(pinchState.startZoom * factor, 0.25, 5);
 
-    const iw = state.image?.naturalWidth || 1;
-    const ih = state.image?.naturalHeight || 1;
+    const iw = (state.image && state.image.naturalWidth) || 1;
+    const ih = (state.image && state.image.naturalHeight) || 1;
     const W = wrap.clientWidth, H = wrap.clientHeight;
     const fit = Math.min(W / iw, H / ih) * newZoom;
     const newW = iw * fit, newH = ih * fit;
@@ -3271,8 +3330,8 @@ function onPointerUp(e) {
 function applyEndpointDrag(orig, part, p) {
   const idx = state.annotations.findIndex(a => a.id === orig.id);
   if (idx < 0) return;
-  const a = { ...state.annotations[idx] };
-  const np = { ...p };
+  const a = Object.assign({}, state.annotations[idx]);
+  const np = Object.assign({}, p);
   const snap = { x: null, y: null };
 
   if (editorPrefs.snap) {
@@ -3445,7 +3504,7 @@ function editValueOf(id) {
     unit,
     draft: null,
     annotationId: id,
-    style: { ...originalStyle },
+    style: Object.assign({}, originalStyle),
     originalStyle,
   };
   renderValueModal(
@@ -3484,7 +3543,6 @@ function renderValueModal(title, initialText) {
 
   const isText = vmState.type === 'text';
 
-  // 单位栏：仅标线显示
   const bar = $('#value-unit-bar');
   if (isText) {
     bar.hidden = true;
@@ -3503,10 +3561,8 @@ function renderValueModal(title, initialText) {
     });
   }
 
-  // 色块标签
   $('#value-color-label').textContent = isText ? '主色' : '线色';
 
-  // 输入框属性与过滤
   if (isText) {
     input.setAttribute('inputmode', 'text');
     input.setAttribute('pattern', '');
@@ -3683,7 +3739,6 @@ function openStyleEditor(initialStyle, onApply, onCancel) {
 
   const isTextMode = vmState && vmState.type === 'text';
 
-  // 文字框：隐藏线相关分组
   $('#style-endpoint-section').hidden = !!isTextMode;
   $('#style-labelpos-section').hidden = !!isTextMode;
   $('#style-showvalue-section').hidden = !!isTextMode;
@@ -3807,7 +3862,6 @@ function openStyleEditor(initialStyle, onApply, onCancel) {
     const textColorCss = lts ? lineColorCss : colorById(ltc).css;
 
     if (isTextMode) {
-      // 文字框样式预览
       const label = '文字';
       const fs2 = 18 * lfs;
       px.font = `600 ${fs2}px -apple-system, sans-serif`;
@@ -3958,11 +4012,11 @@ function duplicateAnnotation(id) {
   if (!a) return;
   pushHistory();
   const o = 0.03;
-  const newA = {
-    ...a, id: uid(),
+  const newA = Object.assign({}, a, {
+    id: uid(),
     x1: a.x1 + o, y1: a.y1 + o,
     x2: a.x2 + o, y2: a.y2 + o,
-  };
+  });
   state.annotations.push(newA);
   state.selectedAnnotationId = newA.id;
   persistCurrent(); renderCanvas();
@@ -4001,7 +4055,7 @@ function undo() {
 }
 async function persistCurrent() {
   if (!state.current || !state.currentImage) return;
-  state.currentImage.annotations = state.annotations.map(a => ({ ...a }));
+  state.currentImage.annotations = state.annotations.map(a => Object.assign({}, a));
   state.current.updatedAt = Date.now();
   const ii = state.current.images.findIndex(x => x.id === state.currentImage.id);
   if (ii >= 0) state.current.images[ii] = state.currentImage;
