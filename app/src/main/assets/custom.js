@@ -11,8 +11,7 @@ window.addEventListener("DOMContentLoaded",()=>{const t=document.createElement("
 <style>
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-:root { --ad-reserve: 10vh; }
-@media (display-mode: standalone) { :root { --ad-reserve: 0px; } }
+:root { --ad-reserve: 0px; }
 
 html, body {
   margin: 0; padding: 0; height: 100%; overflow: hidden;
@@ -394,6 +393,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   right: 14px;
   bottom: 14px;
   display: flex;
+  flex-direction: column;
   gap: 10px;
   z-index: 40;
   pointer-events: auto;
@@ -420,6 +420,12 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   box-shadow: 0 2px 14px rgba(10,132,255,0.5);
 }
 #editor-fab button:active { transform: scale(0.93); }
+#btn-add-text {
+  font-family: -apple-system, "PingFang SC", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
 
 #watermark-layer {
   position: absolute;
@@ -501,7 +507,12 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   border-radius: 10px; font-size: 22px; font-weight: 600;
   outline: none; margin-bottom: 12px; text-align: center;
 }
+
+#modal-value .sheet { max-height: 33vh; }
+#modal-style .sheet { max-height: 50vh; }
+
 .unit-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+.unit-bar[hidden] { display: none; }
 .unit-btn {
   flex: 1; padding: 9px; background: #2c2c2e; border: none; color: #fff;
   border-radius: 8px; font-size: 14px; cursor: pointer;
@@ -684,7 +695,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
     <div id="list-right"></div>
   </header>
   <div class="search-bar" id="search-bar" hidden>
-    <input type="search" id="search-input" placeholder="搜索项目或房间" autocomplete="off">
+    <input type="search" id="search-input" placeholder="搜索项目" autocomplete="off">
   </div>
   <div id="home-content" class="scroll-list"></div>
   <div id="home-selection-bar" hidden>
@@ -728,8 +739,11 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
       <span class="watermark-text">PicDim</span>
     </div>
     <div id="editor-fab">
+      <button id="btn-layer-up" title="上移一层">⬆️</button>
+      <button id="btn-layer-down" title="下移一层">⬇️</button>
       <button id="btn-mode-toggle" title="平移模式（点击开启点画）">🤚</button>
       <button id="btn-add-ruler" title="创建标尺">📏</button>
+      <button id="btn-add-text" title="创建文字">T</button>
     </div>
   </div>
   <div class="editor-footer">
@@ -744,12 +758,12 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 <div class="modal" id="modal-value" hidden>
   <div class="sheet">
     <h3 id="value-title">输入尺寸</h3>
-    <input type="text" id="value-input" inputmode="decimal" placeholder="例如 1200">
+    <input type="text" id="value-input" inputmode="decimal" placeholder="例如 1200" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     <div class="unit-bar" id="value-unit-bar"></div>
 
     <div class="style-section" style="margin-top:4px;margin-bottom:14px;">
       <div class="style-label">
-        <span>线色</span>
+        <span id="value-color-label">线色</span>
         <button class="more-style-btn" id="value-more-style">更多样式 ›</button>
       </div>
       <div class="color-grid" id="value-line-color-grid"></div>
@@ -773,10 +787,10 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
       <canvas id="style-preview-canvas" width="280" height="80"></canvas>
     </div>
     <div class="style-section">
-      <div class="style-label">线的颜色</div>
+      <div class="style-label" id="style-line-color-label">线的颜色</div>
       <div class="color-grid" id="line-color-grid"></div>
     </div>
-    <div class="style-section">
+    <div class="style-section" id="style-weight-section">
       <div class="style-label">线的粗细</div>
       <div class="slider-row">
         <span style="font-size:13px;color:#8e8e93;">细</span>
@@ -784,11 +798,11 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
         <span class="weight-val" id="line-weight-val">1.0x</span>
       </div>
     </div>
-    <div class="style-section">
+    <div class="style-section" id="style-endpoint-section">
       <div class="style-label">端点款式</div>
       <div class="endpoint-grid" id="endpoint-grid"></div>
     </div>
-    <div class="style-section">
+    <div class="style-section" id="style-labelpos-section">
       <div class="style-label">标签位置</div>
       <div class="label-pos-grid" id="label-pos-grid">
         <button class="label-pos-btn" data-pos="above">上方</button>
@@ -801,7 +815,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
         <span>文字颜色</span>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#8e8e93;">
           <input type="checkbox" id="text-same-color" style="accent-color:#0a84ff;">
-          跟随线色
+          跟随主色
         </label>
       </div>
       <div class="color-grid" id="text-color-grid"></div>
@@ -814,7 +828,7 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
         <span class="weight-val" id="font-size-val">1.0x</span>
       </div>
     </div>
-    <div class="toggle-row">
+    <div class="toggle-row" id="style-showvalue-section">
       <span>显示数值</span>
       <input type="checkbox" id="show-value-toggle" checked>
     </div>
@@ -950,11 +964,12 @@ function busy(on, text) {
   $('#spinner').hidden = !on;
 }
 
-// ===== 导出下载：兼容 iOS WKWebView（走系统分享菜单） =====
 async function download(blob, name) {
-  if (navigator.canShare) {
+  const type = blob.type || 'application/octet-stream';
+
+  if (navigator.canShare && navigator.share) {
     try {
-      const file = new File([blob], name, { type: blob.type || 'application/octet-stream' });
+      const file = new File([blob], name, { type });
       if (navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: name });
         return;
@@ -963,12 +978,33 @@ async function download(blob, name) {
       if (e && e.name === 'AbortError') return;
     }
   }
-  const u = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = u; a.download = name;
-  document.body.appendChild(a);
-  a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(u), 2000);
+
+  try {
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = u;
+    a.download = name;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 60000);
+    return;
+  } catch (_) { /* fallthrough */ }
+
+  try {
+    const u = URL.createObjectURL(blob);
+    const w = window.open(u, '_blank');
+    if (!w) {
+      toast('无法自动保存，请检查分享/存储权限');
+    } else {
+      toast('长按图片可保存到相册');
+    }
+    setTimeout(() => URL.revokeObjectURL(u), 120000);
+  } catch (e) {
+    toast('导出失败：' + (e && e.message || '未知错误'));
+  }
 }
 
 function sanitizeName(s) {
@@ -1232,6 +1268,10 @@ function migrateProject(p) {
       ...im,
       id: im.id || uid(),
       name: im.name || defaultImageName(),
+      annotations: (im.annotations || []).map(a => ({
+        ...a,
+        type: a.type || 'line',
+      })),
     }));
     return p;
   }
@@ -1249,7 +1289,7 @@ function migrateProject(p) {
         thumbUrl: p.thumbUrl || '',
         width: p.imageWidth || 0,
         height: p.imageHeight || 0,
-        annotations: p.annotations || [],
+        annotations: (p.annotations || []).map(a => ({ ...a, type: a.type || 'line' })),
       }],
     };
   }
@@ -1279,41 +1319,136 @@ function crc32(bytes) {
   for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
   return (c ^ 0xFFFFFFFF) >>> 0;
 }
+
 function buildZip(files) {
   const enc = new TextEncoder();
-  const chunks = [], central = [];
+  const chunks = [];
+  const central = [];
   let offset = 0;
+
+  let totalDataSize = 0, maxSingleSize = 0;
+  for (const f of files) {
+    totalDataSize += f.data.length;
+    if (f.data.length > maxSingleSize) maxSingleSize = f.data.length;
+  }
+  const needsZip64 =
+    maxSingleSize >= 0xFFFFFFFF ||
+    totalDataSize >= 0xFFFFFFFF ||
+    files.length >= 0xFFFF;
+
   for (const f of files) {
     const nameBytes = enc.encode(f.path);
     const data = f.data;
     const crc = crc32(data);
     const size = data.length;
-    const lfh = new Uint8Array(30 + nameBytes.length);
+    const useZip64 = needsZip64;
+
+    const lfhExtraLen = useZip64 ? 20 : 0;
+    const lfh = new Uint8Array(30 + nameBytes.length + lfhExtraLen);
     const dv = new DataView(lfh.buffer);
-    dv.setUint32(0, 0x04034b50, true); dv.setUint16(4, 20, true);
-    dv.setUint16(6, 0x0800, true); dv.setUint16(8, 0, true);
-    dv.setUint16(10, 0, true); dv.setUint16(12, 0, true);
-    dv.setUint32(14, crc, true); dv.setUint32(18, size, true);
-    dv.setUint32(22, size, true); dv.setUint16(26, nameBytes.length, true);
-    dv.setUint16(28, 0, true);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, useZip64 ? 45 : 20, true);
+    dv.setUint16(6, 0x0800, true);
+    dv.setUint16(8, 0, true);
+    dv.setUint16(10, 0, true);
+    dv.setUint16(12, 0, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, useZip64 ? 0xFFFFFFFF : size, true);
+    dv.setUint32(22, useZip64 ? 0xFFFFFFFF : size, true);
+    dv.setUint16(26, nameBytes.length, true);
+    dv.setUint16(28, lfhExtraLen, true);
     lfh.set(nameBytes, 30);
+    if (useZip64) {
+      const ev = new DataView(lfh.buffer, 30 + nameBytes.length, 20);
+      ev.setUint16(0, 0x0001, true);
+      ev.setUint16(2, 16, true);
+      ev.setUint32(4, size >>> 0, true);
+      ev.setUint32(8, Math.floor(size / 0x100000000), true);
+      ev.setUint32(12, size >>> 0, true);
+      ev.setUint32(16, Math.floor(size / 0x100000000), true);
+    }
     chunks.push(lfh, data);
-    const cd = new Uint8Array(46 + nameBytes.length);
+
+    const cdExtraLen = useZip64 ? 28 : 0;
+    const cd = new Uint8Array(46 + nameBytes.length + cdExtraLen);
     const dv2 = new DataView(cd.buffer);
-    dv2.setUint32(0, 0x02014b50, true); dv2.setUint16(4, 20, true);
-    dv2.setUint16(6, 20, true); dv2.setUint16(8, 0x0800, true);
-    dv2.setUint16(10, 0, true); dv2.setUint16(12, 0, true);
-    dv2.setUint16(14, 0, true); dv2.setUint32(16, crc, true);
-    dv2.setUint32(20, size, true); dv2.setUint32(24, size, true);
-    dv2.setUint16(28, nameBytes.length, true); dv2.setUint16(30, 0, true);
-    dv2.setUint16(32, 0, true); dv2.setUint16(34, 0, true);
-    dv2.setUint16(36, 0, true); dv2.setUint32(38, 0, true);
-    dv2.setUint32(42, offset, true);
+    dv2.setUint32(0, 0x02014b50, true);
+    dv2.setUint16(4, useZip64 ? 45 : 20, true);
+    dv2.setUint16(6, useZip64 ? 45 : 20, true);
+    dv2.setUint16(8, 0x0800, true);
+    dv2.setUint16(10, 0, true);
+    dv2.setUint16(12, 0, true);
+    dv2.setUint16(14, 0, true);
+    dv2.setUint32(16, crc, true);
+    dv2.setUint32(20, useZip64 ? 0xFFFFFFFF : size, true);
+    dv2.setUint32(24, useZip64 ? 0xFFFFFFFF : size, true);
+    dv2.setUint16(28, nameBytes.length, true);
+    dv2.setUint16(30, cdExtraLen, true);
+    dv2.setUint16(32, 0, true);
+    dv2.setUint16(34, 0, true);
+    dv2.setUint16(36, 0, true);
+    dv2.setUint32(38, 0, true);
+    dv2.setUint32(42, useZip64 ? 0xFFFFFFFF : offset, true);
     cd.set(nameBytes, 46);
+    if (useZip64) {
+      const ev = new DataView(cd.buffer, 46 + nameBytes.length, 28);
+      ev.setUint16(0, 0x0001, true);
+      ev.setUint16(2, 24, true);
+      ev.setUint32(4, size >>> 0, true);
+      ev.setUint32(8, Math.floor(size / 0x100000000), true);
+      ev.setUint32(12, size >>> 0, true);
+      ev.setUint32(16, Math.floor(size / 0x100000000), true);
+      ev.setUint32(20, offset >>> 0, true);
+      ev.setUint32(24, Math.floor(offset / 0x100000000), true);
+    }
     central.push(cd);
     offset += lfh.length + size;
   }
+
   const cdSize = central.reduce((a, b) => a + b.length, 0);
+
+  if (needsZip64) {
+    const z64 = new Uint8Array(56);
+    const dv = new DataView(z64.buffer);
+    dv.setUint32(0, 0x06064b50, true);
+    dv.setUint32(4, 44, true);
+    dv.setUint32(8, 0, true);
+    dv.setUint16(12, 45, true);
+    dv.setUint16(14, 45, true);
+    dv.setUint32(16, 0, true);
+    dv.setUint32(20, 0, true);
+    dv.setUint32(24, files.length >>> 0, true);
+    dv.setUint32(28, Math.floor(files.length / 0x100000000), true);
+    dv.setUint32(32, files.length >>> 0, true);
+    dv.setUint32(36, Math.floor(files.length / 0x100000000), true);
+    dv.setUint32(40, cdSize >>> 0, true);
+    dv.setUint32(44, Math.floor(cdSize / 0x100000000), true);
+    dv.setUint32(48, offset >>> 0, true);
+    dv.setUint32(52, Math.floor(offset / 0x100000000), true);
+
+    const locator = new Uint8Array(20);
+    const dvl = new DataView(locator.buffer);
+    dvl.setUint32(0, 0x07064b50, true);
+    dvl.setUint32(4, 0, true);
+    const z64Off = offset + cdSize;
+    dvl.setUint32(8, z64Off >>> 0, true);
+    dvl.setUint32(12, Math.floor(z64Off / 0x100000000), true);
+    dvl.setUint32(16, 1, true);
+
+    const eocd = new Uint8Array(22);
+    const dve = new DataView(eocd.buffer);
+    dve.setUint32(0, 0x06054b50, true);
+    dve.setUint16(4, 0, true);
+    dve.setUint16(6, 0, true);
+    dve.setUint16(8, 0xFFFF, true);
+    dve.setUint16(10, 0xFFFF, true);
+    dve.setUint32(12, 0xFFFFFFFF, true);
+    dve.setUint32(16, 0xFFFFFFFF, true);
+    dve.setUint16(20, 0, true);
+
+    return new Blob([...chunks, ...central, z64, locator, eocd], { type: 'application/zip' });
+  }
+
   const eocd = new Uint8Array(22);
   const dv3 = new DataView(eocd.buffer);
   dv3.setUint32(0, 0x06054b50, true); dv3.setUint16(4, 0, true);
@@ -1417,8 +1552,7 @@ function renderHome() {
 
   if (q) {
     entries = entries.filter(e =>
-      e.displayName.toLowerCase().includes(q) ||
-      e.list.some(p => p.name.toLowerCase().includes(q))
+      e.displayName.toLowerCase().includes(q)
     );
   }
 
@@ -2285,7 +2419,7 @@ async function openImage(imageId) {
   const im = state.current.images.find(x => x.id === imageId);
   if (!im) return;
   state.currentImage = im;
-  state.annotations = (im.annotations || []).map(a => ({ ...a }));
+  state.annotations = (im.annotations || []).map(a => ({ ...a, type: a.type || 'line' }));
   state.history = [];
   state.pendingStart = null; state.dragCurrent = null;
   state.snapLines = { x: null, y: null };
@@ -2345,6 +2479,22 @@ $('#btn-mode-toggle').onclick = () => {
   toast(state.editMode === 'draw' ? '点画模式：可画标尺' : '平移模式：拖动图片');
 };
 
+$('#btn-layer-up').onclick = () => {
+  if (!state.selectedAnnotationId) {
+    toast('请先选中一条标线或文字');
+    return;
+  }
+  moveLayer(state.selectedAnnotationId, 'up');
+};
+
+$('#btn-layer-down').onclick = () => {
+  if (!state.selectedAnnotationId) {
+    toast('请先选中一条标线或文字');
+    return;
+  }
+  moveLayer(state.selectedAnnotationId, 'down');
+};
+
 $('#btn-add-ruler').onclick = () => {
   if (!state.image) return;
 
@@ -2378,6 +2528,7 @@ $('#btn-add-ruler').onclick = () => {
 
   const a = {
     id: uid(),
+    type: 'line',
     x1: x1, y1: y, x2: x2, y2: y,
     text: '',
     color: styleDefault.color,
@@ -2393,7 +2544,39 @@ $('#btn-add-ruler').onclick = () => {
   state.annotations.push(a);
   state.selectedAnnotationId = a.id;
   persistCurrent(); renderCanvas(); updateEditorFooter();
-  toast('已创建标尺，双击可输入数值');
+  editValueOf(a.id);
+};
+
+/* 创建空白文字框：位于视口中心 */
+$('#btn-add-text').onclick = () => {
+  if (!state.image) return;
+
+  const wrap = $('#canvas-wrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  const rect = computeImageRect();
+
+  const cx = clamp((W / 2 - rect.x) / rect.w, 0.02, 0.98);
+  const cy = clamp((H / 2 - rect.y) / rect.h, 0.02, 0.98);
+
+  const a = {
+    id: uid(),
+    type: 'text',
+    x1: cx, y1: cy, x2: cx, y2: cy,
+    text: '',
+    color: styleDefault.color,
+    weight: styleDefault.weight,
+    showValue: true,
+    endpointStyle: 'none',
+    fontSize: styleDefault.fontSize,
+    textColorSame: styleDefault.textColorSame,
+    textColor: styleDefault.textColor,
+    labelPos: 'middle',
+  };
+  pushHistory();
+  state.annotations.push(a);
+  state.selectedAnnotationId = a.id;
+  persistCurrent(); renderCanvas(); updateEditorFooter();
+  editValueOf(a.id);
 };
 
 function renderCanvas() {
@@ -2602,7 +2785,57 @@ function drawCrosshair(c, x, y, r, color) {
   c.restore();
 }
 
+/* 文字框绘制（屏幕坐标与导出通用） */
+function drawTextOn(c, a, rect) {
+  const cx = rect.x + a.x1 * rect.w;
+  const cy = rect.y + a.y1 * rect.h;
+  const fs = Math.max(14, rect.w * 0.028) * (a.fontSize || 1);
+  const displayText = a.text || '？';
+  const isSelected = state.selectedAnnotationId === a.id;
+
+  const lineColor = colorById(a.color).css;
+  const textSameAsLine = a.textColorSame !== false;
+  const textColor = textSameAsLine
+    ? lineColor
+    : colorById(a.textColor || a.color).css;
+
+  c.save();
+  c.font = `600 ${fs}px -apple-system, sans-serif`;
+  const tw = c.measureText(displayText).width;
+  const padX = fs * 0.5, padY = fs * 0.3;
+  const bw = tw + padX * 2, bh = fs + padY * 2;
+
+  c.translate(cx, cy);
+
+  c.fillStyle = 'rgba(255,255,255,0.92)';
+  roundRect(c, -bw / 2, -bh / 2, bw, bh, bh * 0.3);
+  c.fill();
+
+  if (isSelected) {
+    c.save();
+    c.strokeStyle = lineColor;
+    c.lineWidth = Math.max(1.6, fs * 0.09);
+    c.setLineDash([6, 4]);
+    c.lineDashOffset = -dashAnimOffset * 0.35;
+    roundRect(c, -bw / 2, -bh / 2, bw, bh, bh * 0.3);
+    c.stroke();
+    c.restore();
+  }
+
+  c.fillStyle = textColor;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillText(displayText, 0, 0);
+
+  c.restore();
+}
+
 function drawAnnotationOn(c, a, rect) {
+  if (a.type === 'text') {
+    drawTextOn(c, a, rect);
+    return;
+  }
+
   const x1 = rect.x + a.x1 * rect.w;
   const y1 = rect.y + a.y1 * rect.h;
   const x2 = rect.x + a.x2 * rect.w;
@@ -2639,8 +2872,8 @@ function drawAnnotationOn(c, a, rect) {
     if (labelAngle > Math.PI / 2 || labelAngle < -Math.PI / 2) labelAngle += Math.PI;
 
     c.font = `600 ${fs}px -apple-system, sans-serif`;
-    const displayText = a.text || '';
-    const tw = displayText ? c.measureText(displayText).width : fs * 2;
+    const displayText = a.text || '？';
+    const tw = c.measureText(displayText).width;
     const padX = fs * 0.4, padY = fs * 0.22;
     const bw = tw + padX * 2, bh = fs + padY * 2;
 
@@ -2672,16 +2905,9 @@ function drawAnnotationOn(c, a, rect) {
       c.restore();
     }
 
-    if (displayText) {
-      c.fillStyle = textColor;
-      c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText(displayText, 0, centerY);
-    } else {
-      c.fillStyle = 'rgba(0,0,0,0.18)';
-      c.font = `600 ${fs * 0.9}px -apple-system, sans-serif`;
-      c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText('···', 0, centerY);
-    }
+    c.fillStyle = textColor;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(displayText, 0, centerY);
 
     c.restore();
   }
@@ -2725,7 +2951,7 @@ function hitTest(p) {
 
   if (state.selectedAnnotationId) {
     const selA = state.annotations.find(x => x.id === state.selectedAnnotationId);
-    if (selA) {
+    if (selA && selA.type !== 'text') {
       const ch = computeCrosshairScreenPos(selA, rect);
       if (ch) {
         const d = Math.hypot(px - ch.x, py - ch.y);
@@ -2738,6 +2964,25 @@ function hitTest(p) {
 
   for (let i = state.annotations.length - 1; i >= 0; i--) {
     const a = state.annotations[i];
+
+    if (a.type === 'text') {
+      const cx = rect.x + a.x1 * rect.w;
+      const cy = rect.y + a.y1 * rect.h;
+      const fs = Math.max(14, rect.w * 0.028) * (a.fontSize || 1);
+      ctx.save();
+      ctx.font = `600 ${fs}px -apple-system, sans-serif`;
+      const tw = ctx.measureText(a.text || '？').width;
+      ctx.restore();
+      const padX = fs * 0.5, padY = fs * 0.3;
+      const halfW = (tw + padX * 2) / 2 + 6;
+      const halfH = (fs + padY * 2) / 2 + 6;
+      if (px >= cx - halfW && px <= cx + halfW &&
+          py >= cy - halfH && py <= cy + halfH) {
+        return { id: a.id, part: 'whole' };
+      }
+      continue;
+    }
+
     const x1 = rect.x + a.x1 * rect.w;
     const y1 = rect.y + a.y1 * rect.h;
     const x2 = rect.x + a.x2 * rect.w;
@@ -2965,7 +3210,6 @@ function onPointerUp(e) {
   const p = screenToNorm(sx, sy);
   const dist = Math.hypot(sx - startSX, sy - startSY);
   const now = Date.now();
-  const wasPanMode = state.editMode === 'pan';
 
   Object.assign(touch, {
     id: null, startSX: 0, startSY: 0,
@@ -2981,10 +3225,13 @@ function onPointerUp(e) {
     persistCurrent(); renderCanvas();
 
     if (!moved && targetId) {
+      const a = state.annotations.find(x => x.id === targetId);
       const isDouble = (now - lastTap.time < 320) &&
         Math.hypot(sx - lastTap.x, sy - lastTap.y) < 30;
       if (isDouble) {
         touch.lastTapTime = 0;
+        editValueOf(targetId);
+      } else if (a && !a.text) {
         editValueOf(targetId);
       } else {
         touch.lastTapTime = now;
@@ -3038,6 +3285,7 @@ function applyEndpointDrag(orig, part, p) {
     const targets = [];
     for (const o of state.annotations) {
       if (o.id === orig.id) continue;
+      if (o.type === 'text') continue;
       targets.push({ x: o.x1, y: o.y1 }, { x: o.x2, y: o.y2 });
     }
     let best = null;
@@ -3163,6 +3411,7 @@ function makeStyleFromDefault() {
 function promptValueForNew(start, end) {
   vmState = {
     mode: 'new',
+    type: 'line',
     unit: '',
     draft: { start, end },
     annotationId: null,
@@ -3177,25 +3426,54 @@ function editValueOf(id) {
   if (!a) return;
   state.selectedAnnotationId = id;
   renderCanvas();
+  const isText = a.type === 'text';
   let unit = '';
   let text = a.text || '';
-  for (const u of ['mm', 'cm', 'in', 'ft', 'm']) {
-    if (text && text.endsWith(u)) {
-      text = text.slice(0, -u.length);
-      unit = u;
-      break;
+  if (!isText) {
+    for (const u of ['mm', 'cm', 'in', 'ft', 'm']) {
+      if (text && text.endsWith(u)) {
+        text = text.slice(0, -u.length);
+        unit = u;
+        break;
+      }
     }
   }
   const originalStyle = makeStyleFromAnnotation(a);
   vmState = {
     mode: 'edit',
+    type: a.type || 'line',
     unit,
     draft: null,
     annotationId: id,
     style: { ...originalStyle },
     originalStyle,
   };
-  renderValueModal('修改尺寸', text);
+  renderValueModal(
+    isText ? (a.text ? '修改文字' : '输入文字') : (a.text ? '修改尺寸' : '输入尺寸'),
+    text
+  );
+}
+
+function cancelValueModal() {
+  const modal = $('#modal-value');
+  modal.hidden = true;
+  if (vmState && vmState.mode === 'edit' && vmState.annotationId && vmState.originalStyle) {
+    const a = state.annotations.find(x => x.id === vmState.annotationId);
+    if (a) {
+      a.color = vmState.originalStyle.color;
+      a.weight = vmState.originalStyle.weight;
+      a.endpointStyle = vmState.originalStyle.endpointStyle;
+      a.fontSize = vmState.originalStyle.fontSize;
+      a.showValue = vmState.originalStyle.showValue;
+      a.textColorSame = vmState.originalStyle.textColorSame;
+      a.textColor = vmState.originalStyle.textColor;
+      a.labelPos = vmState.originalStyle.labelPos;
+      persistCurrent();
+    }
+  }
+  state.pendingStart = null;
+  vmState = null;
+  renderCanvas();
 }
 
 function renderValueModal(title, initialText) {
@@ -3204,17 +3482,55 @@ function renderValueModal(title, initialText) {
   const input = $('#value-input');
   input.value = initialText;
 
+  const isText = vmState.type === 'text';
+
+  // 单位栏：仅标线显示
   const bar = $('#value-unit-bar');
-  bar.innerHTML = UNITS.map(u =>
-    `<button class="unit-btn ${u.id === vmState.unit ? 'active' : ''}" data-u="${u.id}">${u.label}</button>`
-  ).join('');
-  bar.querySelectorAll('.unit-btn').forEach(b => {
-    b.onclick = () => {
-      vmState.unit = b.dataset.u;
-      bar.querySelectorAll('.unit-btn').forEach(x =>
-        x.classList.toggle('active', x === b));
+  if (isText) {
+    bar.hidden = true;
+    bar.innerHTML = '';
+  } else {
+    bar.hidden = false;
+    bar.innerHTML = UNITS.map(u =>
+      `<button class="unit-btn ${u.id === vmState.unit ? 'active' : ''}" data-u="${u.id}">${u.label}</button>`
+    ).join('');
+    bar.querySelectorAll('.unit-btn').forEach(b => {
+      b.onclick = () => {
+        vmState.unit = b.dataset.u;
+        bar.querySelectorAll('.unit-btn').forEach(x =>
+          x.classList.toggle('active', x === b));
+      };
+    });
+  }
+
+  // 色块标签
+  $('#value-color-label').textContent = isText ? '主色' : '线色';
+
+  // 输入框属性与过滤
+  if (isText) {
+    input.setAttribute('inputmode', 'text');
+    input.setAttribute('pattern', '');
+    input.placeholder = '输入文字';
+    input.oninput = null;
+  } else {
+    input.setAttribute('inputmode', 'decimal');
+    input.setAttribute('pattern', '[0-9.]*');
+    input.placeholder = '例如 1200';
+    input.oninput = () => {
+      if (!vmState || vmState.type === 'text') return;
+      let v = input.value.replace(/[^0-9.]/g, '');
+      const firstDot = v.indexOf('.');
+      if (firstDot >= 0) {
+        v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+      }
+      if (v.startsWith('.')) v = '0' + v;
+      if (v !== input.value) {
+        const pos = input.selectionStart;
+        input.value = v;
+        try { input.setSelectionRange(Math.min(pos, v.length), Math.min(pos, v.length)); } catch (_) {}
+      }
     };
-  });
+  }
 
   renderValueLineColorGrid();
 
@@ -3236,33 +3552,24 @@ function renderValueModal(title, initialText) {
 
   modal.querySelector('[data-action="confirm"]').onclick = () => {
     const v = input.value.trim();
-    if (!v) return;
+    if (!v && !isText) return;
     modal.hidden = true;
-    confirmValueModal(v + vmState.unit);
+    confirmValueModal(v + (isText ? '' : vmState.unit));
   };
 
-  modal.querySelector('[data-action="cancel"]').onclick = () => {
-    modal.hidden = true;
-    if (vmState.mode === 'edit' && vmState.annotationId && vmState.originalStyle) {
-      const a = state.annotations.find(x => x.id === vmState.annotationId);
-      if (a) {
-        a.color = vmState.originalStyle.color;
-        a.weight = vmState.originalStyle.weight;
-        a.endpointStyle = vmState.originalStyle.endpointStyle;
-        a.fontSize = vmState.originalStyle.fontSize;
-        a.showValue = vmState.originalStyle.showValue;
-        a.textColorSame = vmState.originalStyle.textColorSame;
-        a.textColor = vmState.originalStyle.textColor;
-        a.labelPos = vmState.originalStyle.labelPos;
-        persistCurrent();
-      }
+  modal.querySelector('[data-action="cancel"]').onclick = cancelValueModal;
+
+  modal.onclick = ev => {
+    if (ev.target !== modal) return;
+    const v = input.value.trim();
+    if (v || isText) {
+      modal.hidden = true;
+      confirmValueModal(v + (isText ? '' : vmState.unit));
+    } else {
+      cancelValueModal();
     }
-    state.pendingStart = null;
-    vmState = null;
-    renderCanvas();
   };
 
-  modal.onclick = ev => { if (ev.target === modal) modal.hidden = true; };
   modal.hidden = false;
   setTimeout(() => { input.focus(); input.select(); }, 150);
 }
@@ -3305,9 +3612,12 @@ function applyVMToAnnotation() {
 
 function confirmValueModal(text) {
   if (!vmState) return;
+  const isText = vmState.type === 'text';
+
   if (vmState.mode === 'new') {
     const a = {
       id: uid(),
+      type: 'line',
       x1: vmState.draft.start.x,
       y1: vmState.draft.start.y,
       x2: vmState.draft.end.x,
@@ -3334,15 +3644,23 @@ function confirmValueModal(text) {
     const a = state.annotations.find(x => x.id === vmState.annotationId);
     if (a) {
       pushHistory();
-      a.text = text;
-      a.color = vmState.style.color;
-      a.weight = vmState.style.weight;
-      a.endpointStyle = vmState.style.endpointStyle;
-      a.fontSize = vmState.style.fontSize;
-      a.showValue = vmState.style.showValue;
-      a.textColorSame = vmState.style.textColorSame;
-      a.textColor = vmState.style.textColor;
-      a.labelPos = vmState.style.labelPos;
+      if (isText) {
+        a.text = text || '？';
+        a.color = vmState.style.color;
+        a.fontSize = vmState.style.fontSize;
+        a.textColorSame = vmState.style.textColorSame;
+        a.textColor = vmState.style.textColor;
+      } else {
+        a.text = text;
+        a.color = vmState.style.color;
+        a.weight = vmState.style.weight;
+        a.endpointStyle = vmState.style.endpointStyle;
+        a.fontSize = vmState.style.fontSize;
+        a.showValue = vmState.style.showValue;
+        a.textColorSame = vmState.style.textColorSame;
+        a.textColor = vmState.style.textColor;
+        a.labelPos = vmState.style.labelPos;
+      }
       persistCurrent();
       renderCanvas();
       syncStyleDefault(vmState.style);
@@ -3362,6 +3680,15 @@ function openStyleEditor(initialStyle, onApply, onCancel) {
   let lts = initialStyle.textColorSame;
   let ltc = initialStyle.textColor;
   let lpos = initialStyle.labelPos;
+
+  const isTextMode = vmState && vmState.type === 'text';
+
+  // 文字框：隐藏线相关分组
+  $('#style-endpoint-section').hidden = !!isTextMode;
+  $('#style-labelpos-section').hidden = !!isTextMode;
+  $('#style-showvalue-section').hidden = !!isTextMode;
+  $('#style-weight-section').hidden = !!isTextMode;
+  $('#style-line-color-label').textContent = isTextMode ? '主色' : '线的颜色';
 
   const lineColorGrid = $('#line-color-grid');
   function renderLineColorGrid() {
@@ -3478,6 +3805,29 @@ function openStyleEditor(initialStyle, onApply, onCancel) {
 
     const lineColorCss = colorById(lc).css;
     const textColorCss = lts ? lineColorCss : colorById(ltc).css;
+
+    if (isTextMode) {
+      // 文字框样式预览
+      const label = '文字';
+      const fs2 = 18 * lfs;
+      px.font = `600 ${fs2}px -apple-system, sans-serif`;
+      const tw = px.measureText(label).width;
+      const padX = fs2 * 0.5, padY = fs2 * 0.3;
+      const bw = tw + padX * 2, bh = fs2 + padY * 2;
+      const cx2 = 140, cy2 = 40;
+      px.save();
+      px.translate(cx2, cy2);
+      px.fillStyle = 'rgba(255,255,255,0.92)';
+      roundRect(px, -bw / 2, -bh / 2, bw, bh, bh * 0.3);
+      px.fill();
+      px.fillStyle = textColorCss;
+      px.textAlign = 'center';
+      px.textBaseline = 'middle';
+      px.fillText(label, 0, 0);
+      px.restore();
+      return;
+    }
+
     const x1 = 30, y1 = 55, x2 = 250, y2 = 25;
     const angle = Math.atan2(y2 - y1, x2 - x1);
     const lw2 = 2 * lw;
@@ -3572,21 +3922,23 @@ function endpointSvg(style) {
 function showAnnotationMenu(id) {
   state.selectedAnnotationId = id;
   renderCanvas();
+  const a = state.annotations.find(x => x.id === id);
+  const isText = a && a.type === 'text';
   showMenu('标注操作', [
-    { label: '✏️ 编辑数值', action: () => editValueOf(id) },
+    { label: isText ? '✏️ 编辑文字' : '✏️ 编辑数值', action: () => editValueOf(id) },
     { label: '🎨 样式', action: () => {
-      const a = state.annotations.find(x => x.id === id);
-      if (!a) return;
-      openStyleEditor(makeStyleFromAnnotation(a), (newStyle) => {
+      const aa = state.annotations.find(x => x.id === id);
+      if (!aa) return;
+      openStyleEditor(makeStyleFromAnnotation(aa), (newStyle) => {
         pushHistory();
-        a.color = newStyle.color;
-        a.weight = newStyle.weight;
-        a.endpointStyle = newStyle.endpointStyle;
-        a.fontSize = newStyle.fontSize;
-        a.showValue = newStyle.showValue;
-        a.textColorSame = newStyle.textColorSame;
-        a.textColor = newStyle.textColor;
-        a.labelPos = newStyle.labelPos;
+        aa.color = newStyle.color;
+        aa.weight = newStyle.weight;
+        aa.endpointStyle = newStyle.endpointStyle;
+        aa.fontSize = newStyle.fontSize;
+        aa.showValue = newStyle.showValue;
+        aa.textColorSame = newStyle.textColorSame;
+        aa.textColor = newStyle.textColor;
+        aa.labelPos = newStyle.labelPos;
         persistCurrent();
         renderCanvas();
         syncStyleDefault(newStyle);
@@ -3723,54 +4075,33 @@ async function exportProjectsAsZip(projects, label) {
   busy(true, `打包中…`);
   try {
     const files = [];
+    const usedNamesByFolder = new Map();
+
     for (const p of projects) {
       const folderName = sanitizeName(p.folderName || '未分类');
-      const projectName = sanitizeName(p.name);
+      if (!usedNamesByFolder.has(folderName)) usedNamesByFolder.set(folderName, new Set());
+      const used = usedNamesByFolder.get(folderName);
+
+      const roomBase = sanitizeName(p.name || '未命名');
+
       for (let i = 0; i < p.images.length; i++) {
         const im = p.images[i];
-        const imgBase = sanitizeName(im.name || `图${i + 1}`);
-        busy(true, `打包 ${projectName}/${imgBase}`);
+        busy(true, `打包 ${folderName}/${roomBase} (${i + 1}/${p.images.length})`);
+
+        let base = roomBase;
+        let n = 2;
+        while (used.has(base)) { base = `${roomBase}-${n}`; n++; }
+        used.add(base);
+
         const blob = await renderImageToBlob(im);
         const buf = new Uint8Array(await blob.arrayBuffer());
-        files.push({ path: `${folderName}/${projectName}/${imgBase}.png`, data: buf });
-        const meta = {
-          projectName: p.name, folderName: p.folderName || '',
-          imageName: im.name || `图${i + 1}`,
-          width: im.width, height: im.height,
-          annotations: im.annotations || [],
-        };
-        files.push({
-          path: `${folderName}/${projectName}/${imgBase}.json`,
-          data: new TextEncoder().encode(JSON.stringify(meta, null, 2)),
-        });
+        files.push({ path: `${folderName}/${base}.png`, data: buf });
       }
       await new Promise(r => setTimeout(r, 60));
     }
-    const rows = ['项目,房间,图片,标注序号,数值,起点X,起点Y,终点X,终点Y'];
-    for (const p of projects) {
-      const folder = p.folderName || '未分类';
-      const escape = s => {
-        s = String(s);
-        return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-      };
-      p.images.forEach((im, i) => {
-        const imName = im.name || `图${i + 1}`;
-        const anns = im.annotations || [];
-        if (!anns.length) {
-          rows.push([escape(folder), escape(p.name), escape(imName), '', '', '', '', ''].join(','));
-        } else {
-          anns.forEach((a, j) => {
-            rows.push([
-              escape(folder), escape(p.name), escape(imName), j + 1, escape(a.text),
-              a.x1.toFixed(4), a.y1.toFixed(4), a.x2.toFixed(4), a.y2.toFixed(4)
-            ].join(','));
-          });
-        }
-      });
-    }
-    files.push({ path: '汇总.csv', data: new TextEncoder().encode('\uFEFF' + rows.join('\n')) });
+
     const zip = buildZip(files);
-    await download(zip, `图寸-${sanitizeName(label)}-${timestamp()}.zip`);
+    await download(zip, `图寸-${sanitizeName(label)}.zip`);
     toast('ZIP 已生成');
   } finally { busy(false); }
 }
