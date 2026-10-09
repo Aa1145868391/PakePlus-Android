@@ -174,7 +174,6 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
   content: '✓';
   font-weight: 600;
 }
-/* aspect-ratio: 4/3 → padding-bottom hack（兼容 Chrome 75） */
 .folder-card .folder-cover {
   position: relative;
   height: 0;
@@ -366,7 +365,6 @@ header h1.editable:active { background: rgba(255,255,255,0.1); }
 }
 .image-cell > * + * { margin-top: 4px; }
 .image-cell:active { opacity: 0.75; }
-/* aspect-ratio: 1 → padding-bottom hack */
 .image-cell .thumb-wrap {
   position: relative;
   height: 0;
@@ -994,10 +992,28 @@ function loadImage(src) {
   return new Promise((res, rej) => {
     const img = new Image();
     img.onload = () => res(img);
-    img.onerror = rej;
+    img.onerror = function() { rej(new Error('图片解码失败')); };
     img.src = src;
   });
 }
+
+/* 从 Blob/File 通过 FileReader.readAsDataURL 加载图片，
+   不依赖 URL.createObjectURL，兼容 Android WebView file:// 协议 */
+function loadImageFromBlob(blob) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = function() {
+      const img = new Image();
+      img.onload = function() { res(img); };
+      img.onerror = function() { rej(new Error('图片解码失败')); };
+      img.src = reader.result;
+    };
+    reader.onerror = function() { rej(new Error('文件读取失败')); };
+    try { reader.readAsDataURL(blob); }
+    catch (e) { rej(e); }
+  });
+}
+
 function roundRect(c, x, y, w, h, r) {
   c.beginPath();
   c.moveTo(x + r, y);
@@ -2087,13 +2103,18 @@ function createProjectWithFiles(folder) {
     busy(true, '导入中…');
     try {
       const images = [];
+      let failCount = 0;
       for (const file of files) {
         let img;
         try {
-          const url = URL.createObjectURL(file);
-          try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
-        } catch (e) { continue; }
-        const thumbUrl = await makeThumb(file);
+          img = await loadImageFromBlob(file);
+        } catch (e) {
+          failCount++;
+          console.error('图片加载失败:', file.name, e && e.message);
+          continue;
+        }
+        let thumbUrl = '';
+        try { thumbUrl = await makeThumb(file); } catch (e) { thumbUrl = ''; }
         images.push({
           id: uid(),
           name: defaultImageName(images),
@@ -2104,7 +2125,10 @@ function createProjectWithFiles(folder) {
           annotations: [],
         });
       }
-      if (!images.length) { toast('没有成功导入的图片'); return; }
+      if (!images.length) {
+        toast(failCount ? `图片导入失败（${failCount} 张）` : '没有成功导入的图片');
+        return;
+      }
       const p = {
         id: uid(),
         name: `房间 ${state.projects.length + 1}`,
@@ -2122,20 +2146,17 @@ function createProjectWithFiles(folder) {
 }
 
 async function makeThumb(blob) {
-  const url = URL.createObjectURL(blob);
-  try {
-    const img = await loadImage(url);
-    const S = 240;
-    const c = document.createElement('canvas');
-    c.width = S; c.height = S;
-    const ctx2 = c.getContext('2d');
-    ctx2.fillStyle = '#2c2c2e'; ctx2.fillRect(0, 0, S, S);
-    const r = img.naturalWidth / img.naturalHeight;
-    let w = S, h = S;
-    if (r > 1) h = S / r; else w = S * r;
-    ctx2.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
-    return c.toDataURL('image/jpeg', 0.7);
-  } finally { URL.revokeObjectURL(url); }
+  const img = await loadImageFromBlob(blob);
+  const S = 240;
+  const c = document.createElement('canvas');
+  c.width = S; c.height = S;
+  const ctx2 = c.getContext('2d');
+  ctx2.fillStyle = '#2c2c2e'; ctx2.fillRect(0, 0, S, S);
+  const r = img.naturalWidth / img.naturalHeight;
+  let w = S, h = S;
+  if (r > 1) h = S / r; else w = S * r;
+  ctx2.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+  return c.toDataURL('image/jpeg', 0.7);
 }
 
 $('#folder-back').onclick = () => { showHome(); };
@@ -2284,13 +2305,14 @@ function addImagesToCurrentProject() {
     if (!files.length || !state.current) return;
     busy(true, '导入中…');
     try {
+      let okCount = 0, failCount = 0;
       for (const file of files) {
         let img;
         try {
-          const url = URL.createObjectURL(file);
-          try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
-        } catch (e) { continue; }
-        const thumbUrl = await makeThumb(file);
+          img = await loadImageFromBlob(file);
+        } catch (e) { failCount++; continue; }
+        let thumbUrl = '';
+        try { thumbUrl = await makeThumb(file); } catch (e) { thumbUrl = ''; }
         state.current.images.push({
           id: uid(),
           name: defaultImageName(state.current.images),
@@ -2300,13 +2322,18 @@ function addImagesToCurrentProject() {
           height: img.naturalHeight,
           annotations: [],
         });
+        okCount++;
+      }
+      if (!okCount) {
+        toast(failCount ? `图片导入失败（${failCount} 张）` : '没有成功导入的图片');
+        return;
       }
       state.current.updatedAt = Date.now();
       await DB.put(state.current);
       const pi = state.projects.findIndex(x => x.id === state.current.id);
       if (pi >= 0) state.projects[pi] = state.current;
       renderProjectPage();
-      toast(`已添加 ${files.length} 张`);
+      toast(`已添加 ${okCount} 张${failCount ? `，失败 ${failCount} 张` : ''}`);
     } finally { busy(false); }
   });
 }
@@ -2490,9 +2517,13 @@ async function openImage(imageId) {
   state.panY = 0;
   state.editMode = 'pan';
 
-  const url = URL.createObjectURL(im.imageBlob);
   let img;
-  try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
+  try {
+    img = await loadImageFromBlob(im.imageBlob);
+  } catch (e) {
+    toast('图片打开失败');
+    return;
+  }
   state.image = img;
 
   const idx = state.current.images.findIndex(x => x.id === imageId);
@@ -4069,9 +4100,7 @@ function updateEditorFooter() {
 }
 
 async function renderImageToBlob(imageObj) {
-  const url = URL.createObjectURL(imageObj.imageBlob);
-  let img;
-  try { img = await loadImage(url); } finally { URL.revokeObjectURL(url); }
+  const img = await loadImageFromBlob(imageObj.imageBlob);
   const MAX = 2400;
   let w = img.naturalWidth, h = img.naturalHeight;
   if (Math.max(w, h) > MAX) {
